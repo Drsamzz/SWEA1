@@ -2,10 +2,14 @@ import click, pytest, sys
 from flask import Flask
 from flask.cli import with_appcontext, AppGroup
 
+from datetime import datetime
 from App.database import db, get_migrate
 from App.models import User, Student, Staff, Review
 from App.main import create_app
-from App.controllers import ( create_user, get_all_users_json, get_all_users, initialize )
+from App.controllers import ( create_user, get_all_users_json, get_all_users, initialize)
+from App.controllers.student import create_student, list_students, get_student, edit_student, delete_student
+from App.controllers.staff import create_staff, list_staff
+from App.controllers.review import create_review, list_reviews, edit_review, delete_review
 
 
 # This commands file allow you to create convenient CLI commands for testing controllers
@@ -71,149 +75,85 @@ app.cli.add_command(test)
 
 
 
-# Student CLI commands
+# Student CLI group
+student_cli = AppGroup('student', help="Student object commands")
 
-@app.cli.command("create-student", help="Creates a new student")
+@student_cli.command("create", help="Creates a student")
 @click.argument("first_name")
 @click.argument("last_name")
 @click.argument("degree")
 def create_student_command(first_name, last_name, degree):
-    student = Student(firstName=first_name, lastName=last_name, degree=degree)
-    db.session.add(student)
-    db.session.commit()
-    print(f'Student {first_name} {last_name} created!')
+    create_student(first_name, last_name, degree)
 
-@app.cli.command("list-students", help="Lists all students")
+@student_cli.command("list", help="Lists all students")
 def list_students_command():
-    students = Student.query.all()
-    for student in students:
-        print(f'{student.studentID}: {student.firstName} {student.lastName}, Degree: {student.degree}')
+    list_students()
 
-@app.cli.command("get-student", help="Get a student by ID")
+@student_cli.command("get", help="Get a student by ID")
 @click.argument("student_id")
 def get_student_command(student_id):
-    student = Student.query.get(student_id)
-    if student:
-        print(f'Student {student.firstName} {student.lastName} found.')
-    else:
-        print("Student not found.")
+    get_student(student_id)
 
-@app.cli.command("student-edit", help="Edits a student's details")
+@student_cli.command("edit", help="Edits a student's details")
 @click.argument("student_id")
 @click.argument("first_name")
 @click.argument("last_name")
 @click.argument("degree")
 def edit_student_command(student_id, first_name, last_name, degree):
-    student = Student.query.get(student_id)
-    if student:
-        student.firstName = first_name
-        student.lastName = last_name
-        student.degree = degree
-        db.session.commit()
-        print(f'Student {student_id} updated.')
-    else:
-        print("Student not found.")
+    edit_student(student_id, first_name, last_name, degree)
 
-@app.cli.command("delete-student", help="Deletes a student by ID")
+@student_cli.command("delete", help="Deletes a student by ID")
 @click.argument("student_id")
 def delete_student_command(student_id):
-    student = Student.query.get(student_id)
-    if student:
-        db.session.delete(student)
-        db.session.commit()
-        print(f'Student {student_id} deleted.')
-    else:
-        print("Student not found.")
+    delete_student(student_id)
 
+app.cli.add_command(student_cli)
 
+# Staff CLI group
+staff_cli = AppGroup('staff', help="Staff object commands")
 
-# Staff CLI commands
-
-@app.cli.command("create-staff", help="Creates a new staff member")
+@staff_cli.command("create", help="Creates a new staff member")
 @click.argument("first_name")
 @click.argument("last_name")
 @click.argument("role")
 def create_staff_command(first_name, last_name, role):
-    staff = Staff(firstName=first_name, lastName=last_name, role=role)
-    db.session.add(staff)
-    db.session.commit()
-    print(f'Staff member {first_name} {last_name} created!')
+    create_staff(first_name, last_name, role)
 
-@app.cli.command("staff-list", help="Lists all staff members")
+@staff_cli.command("list", help="Lists all staff members")
 def list_staff_command():
-    staff_members = Staff.query.all()
-    for staff in staff_members:
-        print(f'{staff.staffID}: {staff.firstName} {staff.lastName}, Role: {staff.role}')
+    list_staff()
 
+app.cli.add_command(staff_cli)
 
+# Review CLI group
+review_cli = AppGroup('review', help="Review object commands")
 
-# Review CLI commands
-
-@app.cli.command("review-create", help="Creates a new review")
+@review_cli.command("create", help="Creates a new review")
 @click.argument("student_id")
 @click.argument("staff_id")
 @click.argument("review_type")
 @click.argument("description")
-def create_review_command(student_id, staff_id, review_type, description):
-    student = Student.query.get(student_id)
-    staff = Staff.query.get(staff_id)
-    if student and staff:
-        review = Review(studentID=student_id, staffID=staff_id, reviewType=review_type, description=description)
-        db.session.add(review)
-        db.session.commit()
-        print(f'Review for student {student_id} by staff {staff_id} created.')
-    else:
-        print("Student or staff not found.")
+@click.option("--review-date", type=click.DateTime(), help="Review date (optional)")
+def create_review_command(student_id, staff_id, review_type, description, review_date):
+    create_review(student_id, staff_id, review_type, description, review_date)
 
-@app.cli.command("review-list", help="Lists all reviews for a student")
+
+@review_cli.command("list", help="Lists all reviews for a student")
 @click.argument("student_id")
 def list_reviews_command(student_id):
-    student = Student.query.get(student_id)
-    if student:
-        reviews = student.reviews
-        for review in reviews:
-            print(f'Review {review.reviewID}: {review.reviewType}, {review.description}')
-    else:
-        print("Student not found.")
+    list_reviews(student_id)
 
-@app.cli.command("review-edit", help="Edits a review")
+@review_cli.command("edit", help="Edits a review")
 @click.argument("review_id")
 @click.argument("review_type")
 @click.argument("description")
-def edit_review_command(review_id, review_type, description):
-    review = Review.query.get(review_id)
-    if review:
-        review.reviewType = review_type
-        review.description = description
-        db.session.commit()
-        print(f'Review {review_id} updated.')
-    else:
-        print("Review not found.")
+@click.option("--review-date", type=click.DateTime(), help="Review date (optional)")
+def edit_review_command(review_id, review_type, description, review_date):
+    edit_review(review_id, review_type, description, review_date)
 
-@app.cli.command("review-delete", help="Deletes a review by ID")
+@review_cli.command("delete", help="Deletes a review by ID")
 @click.argument("review_id")
 def delete_review_command(review_id):
-    review = Review.query.get(review_id)
-    if review:
-        db.session.delete(review)
-        db.session.commit()
-        print(f'Review {review_id} deleted.')
-    else:
-        print("Review not found.")
+    delete_review(review_id)
 
-
-
-app.cli.add_command(create_student_command)
-app.cli.add_command(list_students_command)
-app.cli.add_command(get_student_command)
-app.cli.add_command(edit_student_command)
-app.cli.add_command(delete_student_command)
-
-app.cli.add_command(create_staff_command)
-app.cli.add_command(list_staff_command)
-
-app.cli.add_command(create_review_command)
-app.cli.add_command(list_reviews_command)
-app.cli.add_command(edit_review_command)
-app.cli.add_command(delete_review_command)
-
+app.cli.add_command(review_cli)

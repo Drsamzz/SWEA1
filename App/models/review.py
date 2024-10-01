@@ -1,3 +1,4 @@
+from datetime import datetime
 from App.database import db
 
 class Review(db.Model):
@@ -6,7 +7,7 @@ class Review(db.Model):
     studentID = db.Column(db.Integer, db.ForeignKey('student.studentID'), nullable=False)
     staffID = db.Column(db.Integer, db.ForeignKey('staff.staffID'), nullable=False)
     reviewType = db.Column(db.String(50), nullable=False)
-    description = db.Column(db.String(200), nullable=True)
+    description = db.Column(db.Text, nullable=True)  
+    reviewDate = db.Column(db.DateTime, nullable=False, default=datetime.utcnow())  # Auto set current date
 
-    student = db.relationship('Student', back_populates='reviews')
-    staff = db.relationship('Staff', back_populates='reviews')
+    staff = db.relationship('Staff', backref='reviews')

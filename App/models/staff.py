@@ -7,6 +7,4 @@ class Staff(db.Model):
     lastName = db.Column(db.String(50), nullable=False)
     role = db.Column(db.String(50), nullable=False)
 
-    reviews = db.relationship('Review', back_populates='staff', lazy=True)
-    
-   
+

@@ -7,4 +7,4 @@ class Student(db.Model):
     lastName = db.Column(db.String(50), nullable=False)
     degree = db.Column(db.String(50), nullable=False)
 
-    reviews = db.relationship('Review', back_populates='student', lazy=True)
+    reviews = db.relationship('Review', backref='student', lazy=True)
