@@ -5,6 +5,7 @@ def create_staff(first_name, last_name, role):
     staff = Staff(firstName=first_name, lastName=last_name, role=role)
     db.session.add(staff)
     db.session.commit()
+    print(f'Staff {first_name} {last_name} created!')
 
 def list_staff():
     staff_members = Staff.query.all()
