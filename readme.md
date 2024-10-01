@@ -2,6 +2,8 @@
 
 # Note #
 
+Ensure to run "flask init"
+
 Review Type: The review type must be either "Positive" or "Negative".
 
 Description: The description should be enclosed in quotes.
